@@ -1,0 +1,57 @@
+name: Build QEMU on macOS
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-13
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install dependencies
+      run: |
+        brew install pkg-config python3 glib ninja pixman
+        brew install wget
+        brew install gcc
+        brew install gettext
+        brew install libffi
+        brew install automake
+        brew install libtool
+        
+    - name: Clone QEMU
+      run: |
+        git clone https://gitlab.com/qemu-project/qemu.git
+        cd qemu
+        git submodule init
+        git submodule update --recursive
+        
+    - name: Configure QEMU
+      working-directory: qemu
+      run: |
+        mkdir build
+        cd build
+        ../configure --target-list=x86_64-softmmu \
+                    --enable-cocoa \
+                    --disable-sdl \
+                    --disable-gtk
+        
+    - name: Build QEMU
+      working-directory: qemu/build
+      run: |
+        make -j$(sysctl -n hw.ncpu)
+        
+    - name: Test binary
+      working-directory: qemu/build
+      run: |
+        ./qemu-system-x86_64 --version
+        
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: qemu-macos
+        path: qemu/build/qemu-system-x86_64
