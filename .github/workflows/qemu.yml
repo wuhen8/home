@@ -54,4 +54,4 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: qemu-macos
-        path: qemu/build/qemu-system-x86_64
+        path: qemu/build/*
